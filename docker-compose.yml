@@ -1,0 +1,55 @@
+version: "3.8"
+services:
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: backend:starter
+    container_name: medusa-server-transfer-store
+    depends_on:
+      - postgres
+      - redis
+    links:
+      - postgres
+      - redis
+    networks:
+      - backend
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@postgres:5432/medusa-docker
+      REDIS_URL: redis://redis:6379
+      NODE_ENV: development
+      JWT_SECRET: something
+      COOKIE_SECRET: something
+      PORT: 9000
+    ports:
+      - "9000:9000"
+    volumes:
+      - .:/app/medusa
+
+  postgres:
+    image: postgres:14
+    networks:
+      - backend
+    ports:
+      - "54321:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: medusa-docker
+    volumes:
+      - medusa-db:/var/lib/postgresql/data
+
+  redis:
+    image: redis
+    networks:
+      - backend
+    ports:
+      - "63791:6379"
+
+networks:
+  backend:
+    driver: bridge
+
+volumes:
+  medusa-db:
+    driver: local
