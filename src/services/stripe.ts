@@ -20,10 +20,11 @@ class StripeService extends TransactionBaseService {
   static identifier = "stripe";
   private stripe: Stripe;
 
-  constructor(container) {
+  constructor(container, options) {
     super(container);
-    this.stripe = new Stripe(process.env.STRIPE_API_KEY, {
-      apiVersion: "2022-11-15",
+    const { stripeApiKey } = options;
+    this.stripe = new Stripe(stripeApiKey, {
+      apiVersion: "2023-10-16",
     });
   }
 

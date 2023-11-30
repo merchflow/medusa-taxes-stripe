@@ -8,9 +8,9 @@ import {
   TaxCalculationContext,
 } from "@medusajs/medusa";
 import { ProviderTaxLine } from "@medusajs/medusa/dist/types/tax-service";
-import Stripe from "stripe";
-import { ICacheService } from "@medusajs/types";
 import { LineAllocationsMap } from "@medusajs/medusa/dist/types/totals";
+import { ICacheService } from "@medusajs/types";
+import Stripe from "stripe";
 import StripeService from "./stripe";
 
 type StripeAddressType = {
@@ -41,9 +41,17 @@ class StripeTaxService extends AbstractTaxService {
     this.cacheService = container.cacheService;
     this.stripeService = container.stripeService;
     this.orderService = container.orderService;
-    // console.log(container.stripeService);
   }
 
+  /**
+   * Main service function that resolves the tax lines for a cart. It uses Stripe Tax API to calculate Sales Tax for a given address
+   * and caches the result to avoid multiple calls (stripe api charges per request). It also updates cart's metadata with the calculation id
+   * so we can create a tax transaction later on.
+   * @param itemLines cart items
+   * @param shippingLines shipping options
+   * @param context context to get region and address from
+   * @returns 
+   */
   async getTaxLines(
     itemLines: ItemTaxCalculationLine[],
     shippingLines: ShippingTaxCalculationLine[],
@@ -107,6 +115,11 @@ class StripeTaxService extends AbstractTaxService {
     return taxLines;
   }
 
+  /**
+   * Return empty tax lines for a given itemLines array
+   * @param itemLines itemLines to loop over so we return an array with same length
+   * @returns tax lines for the array
+   */
   private getEmptyTaxLines = (itemLines: ItemTaxCalculationLine[]) => {
     return itemLines.flatMap((l) => {
       return l.rates.map((r) => ({
@@ -118,6 +131,11 @@ class StripeTaxService extends AbstractTaxService {
     });
   };
 
+  /**
+   * Creates a tax transaction from the taxCalculation stored in cart's metadata. If successful, saves the transaction id in cart's metadata.
+   * @param paymentIntent Intent returned from Stripe so we can get the cart's id
+   * @returns created tax transaction
+   */
   public createTaxTransaction = async (paymentIntent: Stripe.PaymentIntent) => {
     const cartId: string = paymentIntent.metadata.resource_id;
 
@@ -143,6 +161,12 @@ class StripeTaxService extends AbstractTaxService {
     return transaction;
   };
 
+  /**
+   * Creates a Stripe reversal transaction for a refund and stores its id in order's metadata.
+   * @param orderId the order id from the refund
+   * @param refundId the refund id provided by Medusa
+   * @returns 
+   */
   public handleOrderRefund = async (orderId: string, refundId: string) => {
     const order = await this.orderService.retrieve(orderId);
 
@@ -154,8 +178,6 @@ class StripeTaxService extends AbstractTaxService {
       refundId
     );
 
-    console.log('AAA')
-
     const updatedOrder = await this.orderService.update(orderId, {
       metadata: { reversalTransaction: reversalTaxTransaction.id },
     });
@@ -163,6 +185,13 @@ class StripeTaxService extends AbstractTaxService {
     return updatedOrder;
   }
 
+  /**
+   * Parses itemLines from medusa to Stripe.
+   * @param itemLines itemLines from Medusa
+   * @param allocation_map given discounts are stored in this param
+   * @param taxCode taxCode to provide to Stripe
+   * @returns 
+   */
   private buildStripeLineItems = (
     itemLines: ItemTaxCalculationLine[],
     allocation_map: LineAllocationsMap,
@@ -179,6 +208,12 @@ class StripeTaxService extends AbstractTaxService {
     });
   };
 
+  /**
+   * Validates received params so that we only call stripe API if they are valid.
+   * @param calculationContext context to get address and region from
+   * @param items itemLines to check if it's not empty
+   * @returns true if valid, false otherwise
+   */
   private validateItemsForTaxCalculation = (
     calculationContext: TaxCalculationContext,
     items: ItemTaxCalculationLine[]
@@ -198,6 +233,14 @@ class StripeTaxService extends AbstractTaxService {
     return true;
   };
 
+  /**
+   * Call Stripe Tax API for the given address and caches the result.
+   * @param address formatted address to call stripe api
+   * @param currency currency used
+   * @param lineItems formatted lineItems for stripe calculation
+   * @param shippingCost shipping cost for stripe calculation
+   * @returns fetched or cached transaction from stripe
+   */
   private fetchTaxCalculation = async (
     address: StripeAddressType,
     currency: string,
@@ -222,6 +265,14 @@ class StripeTaxService extends AbstractTaxService {
     return calculation;
   };
 
+  /**
+   * Builds a string with the given address to be used as the cache key. 
+   * Be aware that updating the key may change how many times the stripe api is called.
+   * @param address address from stripe
+   * @param lineItems formatted stripe lineItems
+   * @param shippingCost shipping cost 
+   * @returns string to be used as the cache key
+   */
   private buildCacheKey = (
     address: StripeAddressType,
     lineItems: LineItemStripeType[],
@@ -241,6 +292,11 @@ class StripeTaxService extends AbstractTaxService {
     );
   };
 
+  /**
+   * Parses an address from medusa to stripe
+   * @param shipping_address shipping address object from medusa
+   * @returns formatted stripe address
+   */
   private buildStripeAddress = (
     shipping_address: Address
   ): StripeAddressType => {

@@ -46,50 +46,7 @@ const REDIS_URL = process.env.REDIS_URL || "redis://localhost:6379";
 const STRIPE_API_KEY = process.env.STRIPE_API_KEY || "";
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET || "";
 
-const plugins = [
-  `medusa-fulfillment-manual`,
-  `medusa-payment-manual`,
-  // To enable the admin plugin, uncomment the following lines and run `yarn add @medusajs/admin`
-  {
-    resolve: "@medusajs/admin",
-    /** @type {import('@medusajs/admin').PluginOptions} */
-    options: {
-      autoRebuild: true,
-    },
-  },
-  {
-    resolve: `medusa-payment-stripe`,
-    options: {
-      api_key: STRIPE_API_KEY,
-      webhook_secret: STRIPE_WEBHOOK_SECRET,
-      capture: true,
-    },
-  },
-  // {
-  //   resolve: `medusa-taxes-stripe`,
-  //   options: {
-  //     api_key: STRIPE_API_KEY,
-  //   },
-  // },
-  {
-    resolve: `medusa-file-spaces`,
-    options: {
-      spaces_url: process.env.SPACE_URL,
-      bucket: process.env.SPACE_BUCKET,
-      endpoint: process.env.SPACE_ENDPOINT,
-      access_key_id: process.env.SPACE_ACCESS_KEY_ID,
-      secret_access_key: process.env.SPACE_SECRET_ACCESS_KEY,
-    },
-  },
-  {
-    resolve: `medusa-plugin-sendgrid`,
-    options: {
-      api_key: process.env.SENDGRID_API_KEY,
-      from: process.env.SENDGRID_FROM,
-      order_placed_template: process.env.SENDGRID_ORDER_PLACED_ID,
-    },
-  },
-];
+const plugins = [];
 
 const modules = {
   eventBus: {

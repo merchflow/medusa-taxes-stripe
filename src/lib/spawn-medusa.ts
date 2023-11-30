@@ -1,3 +1,4 @@
+import { ConfigModule } from "@medusajs/medusa";
 import apiLoader from "@medusajs/medusa/dist/loaders/api";
 import databaseLoader, {
   dataSource,
@@ -5,7 +6,6 @@ import databaseLoader, {
 import defaultsLoader from "@medusajs/medusa/dist/loaders/defaults";
 import expressLoader from "@medusajs/medusa/dist/loaders/express";
 import featureFlagsLoader from "@medusajs/medusa/dist/loaders/feature-flags";
-import Logger from "@medusajs/medusa/dist/loaders/logger";
 import modelsLoader from "@medusajs/medusa/dist/loaders/models";
 import passportLoader from "@medusajs/medusa/dist/loaders/passport";
 import pluginsLoader, {
@@ -17,15 +17,14 @@ import searchIndexLoader from "@medusajs/medusa/dist/loaders/search-index";
 import servicesLoader from "@medusajs/medusa/dist/loaders/services";
 import strategiesLoader from "@medusajs/medusa/dist/loaders/strategies";
 import subscribersLoader from "@medusajs/medusa/dist/loaders/subscribers";
+import { moduleLoader, registerMedusaModule } from "@medusajs/modules-sdk";
 import { asValue } from "awilix";
-import { Express, NextFunction, Request, Response } from "express";
+import axios from "axios";
 import * as express from "express";
+import { Express, NextFunction, Request, Response } from "express";
+import { createMedusaContainer } from "medusa-core-utils";
 import "reflect-metadata";
 const dotenv = require("dotenv");
-import { ConfigModule } from "@medusajs/medusa";
-import { moduleLoader, registerMedusaModule, registerMedusaLinkModule } from "@medusajs/modules-sdk";
-import axios from "axios";
-import { createMedusaContainer } from "medusa-core-utils";
 
 export const medusaInitialize = async () => {
   const PORT = 9000;
@@ -61,7 +60,8 @@ export const medusaInitialize = async () => {
     projectConfig: {
       database_type: "postgres",
       database_logging: false,
-      database_url: "postgres://postgres:postgres@localhost:54321/medusa-docker",
+      database_url:
+        "postgres://postgres:postgres@localhost:54321/medusa-docker",
       store_cors: "/.*/",
       admin_cors: "/.*/",
       database_database: ":memory:",
@@ -80,16 +80,11 @@ export const medusaInitialize = async () => {
         },
       },
       eventBus: {
-        resolve: "@medusajs/event-bus-redis",
-        options: {
-          redisUrl: process.env.REDIS_URL,
-        }
+        resolve: "@medusajs/event-bus-local",
       },
     },
     plugins: [],
   };
-
-  container.register("configModule", asValue(configModule));
 
   const featureFlagRouter = featureFlagsLoader(configModule, logger);
   container.register({
@@ -109,16 +104,16 @@ export const medusaInitialize = async () => {
 
   strategiesLoader({ container, configModule, isTest: false });
 
-  await moduleLoader({
-    container,
-    moduleResolutions: registerMedusaModule(configModule.modules.cacheService),
-    logger: logger,
-  });
-
-  await moduleLoader({
-    container,
-    moduleResolutions: registerMedusaModule(configModule.modules.eventBus),
-    logger: logger,
+  const moduleKeys = Object.keys(configModule.modules);
+  moduleKeys.forEach(async (moduleKey) => {
+    await moduleLoader({
+      container,
+      moduleResolutions: registerMedusaModule(
+        moduleKey,
+        configModule.modules[moduleKey]
+      ),
+      logger,
+    });
   });
 
   const dbConnection = await databaseLoader({

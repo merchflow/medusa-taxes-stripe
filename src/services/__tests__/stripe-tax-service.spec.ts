@@ -1,11 +1,12 @@
-import { medusaInitialize } from "../../lib/spawn-medusa";
 import {
   CartService,
-  LineItemService,
+  CustomerService,
   MedusaContainer,
-  OrderService,
-  RegionService,
+  RegionService
 } from "@medusajs/medusa";
+import CustomerRepository from "@medusajs/medusa/dist/repositories/customer";
+import OrderRepository from "@medusajs/medusa/dist/repositories/order";
+import { medusaInitialize } from "../../lib/spawn-medusa";
 import {
   customerMock,
   itemTaxCalculationMock,
@@ -17,19 +18,15 @@ import {
   stripeTaxTransactionMock,
   taxCalculationShippingAddressMock,
 } from "../__mocks__/mocks";
-import { asValue, createContainer } from "awilix";
-import StripeTaxService from "../stripe-tax";
-import { createMedusaContainer } from "medusa-core-utils";
-import OrderRepository from "@medusajs/medusa/dist/repositories/order";
-import CustomerRepository from "@medusajs/medusa/dist/repositories/customer";
 
-describe("MyService", () => {
+describe("StripeTaxService", () => {
   let defaultContainer: MedusaContainer;
   let stripeTaxService;
   let cartService: CartService;
   let regionService: RegionService;
   let orderRepository: typeof OrderRepository;
   let customerRepository: typeof CustomerRepository;
+  let customerService: CustomerService;
 
   beforeAll(async () => {
     const medusa = await medusaInitialize();
@@ -39,6 +36,8 @@ describe("MyService", () => {
 
     cartService = defaultContainer.resolve("cartService");
     regionService = defaultContainer.resolve("regionService");
+    customerService = defaultContainer.resolve("customerService");
+
     orderRepository = defaultContainer.resolve("orderRepository");
     customerRepository = defaultContainer.resolve("customerRepository");
   });
@@ -174,15 +173,14 @@ describe("MyService", () => {
   it("should create tax transaction on refund", async () => {
     const region = await regionService.retrieveByName("NA");
 
-    await customerRepository.insert(customerMock);
+    const customer = await customerRepository.save(customerMock);
 
-    const order = {
+    const order = await orderRepository.save({
       ...orderMock,
-      customer_id: customerMock.id,
-      email: customerMock.email,
+      customer_id: customer.id,
+      email: customer.email,
       region_id: region.id,
-    };
-    await orderRepository.insert(order);
+    });
     const updatedOrder = await stripeTaxService.handleOrderRefund(
       order.id,
       "ref_1"
