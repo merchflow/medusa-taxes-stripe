@@ -4,12 +4,18 @@
   "description": "Medusa plugin to add a custom Tax Provider to fetch tax calculations from Stripe.",
   "author": "Merchflow - Felipe Lopes <felipe.lopes@merchflow.com>",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/merchflow/medusa-taxes-stripe"
+  },
   "keywords": [
     "stripe",
     "tax",
     "postgres",
     "typescript",
-    "medusa"
+    "medusa",
+    "medusa-plugin",
+    "medusa-plugin-tax"
   ],
   "scripts": {
     "clean": "cross-env ./node_modules/.bin/rimraf dist",
@@ -27,7 +33,8 @@
     "docker-compose-up-dev": "docker-compose up -d --build",
     "docker-compose-down-dev": "docker-compose down",
     "build:admin": "cross-env medusa-admin build",
-    "build:admin:prod": "medusa-admin build --deployment"
+    "build:admin:prod": "medusa-admin build --deployment",
+    "prepare": "cross-env NODE_ENV=production npm run build"
   },
   "dependencies": {
     "@babel/preset-typescript": "^7.21.4",
@@ -35,7 +42,7 @@
     "@medusajs/cache-redis": "^1.9.0",
     "@medusajs/event-bus-local": "^1.9.7",
     "@medusajs/event-bus-redis": "^1.8.10",
-    "@medusajs/medusa": "1.18",
+    "@medusajs/medusa": "^1.18.1",
     "@medusajs/modules-sdk": "^1.12.4",
     "body-parser": "^1.19.0",
     "cors": "^2.8.5",

@@ -1427,7 +1427,7 @@
     winston "^3.8.2"
     yargs "^15.3.1"
 
-"@medusajs/medusa@1.18":
+"@medusajs/medusa@^1.18.1":
   version "1.18.1"
   resolved "https://registry.yarnpkg.com/@medusajs/medusa/-/medusa-1.18.1.tgz#1b971a6be8a4610ce73567a543bd50e997b0aa16"
   integrity sha512-dDxs3mxRqnPjJ7tyHimqn1vZ4ilfnKJIb2PSk8nYAIVvD+TB3rxNV30HVXvfbE1Tg8c04AH1I4mx5C258kB6Bg==
