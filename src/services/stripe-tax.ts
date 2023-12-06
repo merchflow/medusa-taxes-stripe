@@ -50,7 +50,7 @@ class StripeTaxService extends AbstractTaxService {
    * @param itemLines cart items
    * @param shippingLines shipping options
    * @param context context to get region and address from
-   * @returns 
+   * @returns
    */
   async getTaxLines(
     itemLines: ItemTaxCalculationLine[],
@@ -93,7 +93,7 @@ class StripeTaxService extends AbstractTaxService {
         (d) => d.reference === `${l.item.title} - ${l.item.id}`
       );
       return {
-        rate: +item.tax_breakdown[0].tax_rate_details.percentage_decimal || 0,
+        rate: +item.tax_breakdown[0]?.tax_rate_details?.percentage_decimal || 0,
         name: "Sales Tax",
         code: item.tax_code,
         item_id: l.item.id,
@@ -165,13 +165,16 @@ class StripeTaxService extends AbstractTaxService {
    * Creates a Stripe reversal transaction for a refund and stores its id in order's metadata.
    * @param orderId the order id from the refund
    * @param refundId the refund id provided by Medusa
-   * @returns 
+   * @returns
    */
   public handleOrderRefund = async (orderId: string, refundId: string) => {
     const order = await this.orderService.retrieve(orderId);
 
-    if (!order || !order.metadata?.taxTransactionId)
-      throw new Error(`Order ${orderId} not found`);
+    if (!order) throw new Error(`Order ${orderId} not found`);
+    if (!order.metadata?.taxTransactionId)
+      throw new Error(
+        `Order ${orderId} must have 'metadata.taxTransactionId'.`
+      );
 
     const reversalTaxTransaction = await this.stripeService.createReversal(
       order.metadata.taxTransactionId as string,
@@ -183,14 +186,14 @@ class StripeTaxService extends AbstractTaxService {
     });
 
     return updatedOrder;
-  }
+  };
 
   /**
    * Parses itemLines from medusa to Stripe.
    * @param itemLines itemLines from Medusa
    * @param allocation_map given discounts are stored in this param
    * @param taxCode taxCode to provide to Stripe
-   * @returns 
+   * @returns
    */
   private buildStripeLineItems = (
     itemLines: ItemTaxCalculationLine[],
@@ -266,11 +269,11 @@ class StripeTaxService extends AbstractTaxService {
   };
 
   /**
-   * Builds a string with the given address to be used as the cache key. 
+   * Builds a string with the given address to be used as the cache key.
    * Be aware that updating the key may change how many times the stripe api is called.
    * @param address address from stripe
    * @param lineItems formatted stripe lineItems
-   * @param shippingCost shipping cost 
+   * @param shippingCost shipping cost
    * @returns string to be used as the cache key
    */
   private buildCacheKey = (
