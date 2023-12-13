@@ -104,9 +104,9 @@ class StripeTaxService extends AbstractTaxService {
     taxLines = taxLines.concat(
       shippingLines.flatMap((l) => {
         return l.rates.map((r) => ({
-          rate: r.rate || 0,
+          rate: +taxCalculation.shipping_cost?.tax_breakdown[0]?.tax_rate_details?.percentage_decimal || 0,
           name: r.name,
-          code: r.code,
+          code: taxCalculation.shipping_cost?.tax_code,
           shipping_method_id: l.shipping_method.id,
         }));
       })
