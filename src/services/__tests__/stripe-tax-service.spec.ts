@@ -2,22 +2,30 @@ import {
   CartService,
   CustomerService,
   MedusaContainer,
-  RegionService
+  RegionService,
 } from "@medusajs/medusa";
 import CustomerRepository from "@medusajs/medusa/dist/repositories/customer";
 import OrderRepository from "@medusajs/medusa/dist/repositories/order";
 import { medusaInitialize } from "../../lib/spawn-medusa";
 import {
-  customerMock,
-  itemTaxCalculationMock,
-  orderMock,
-  regionMock,
-  stripeMockService,
-  stripePaymentIntentMock,
-  stripeTaxReversalMock,
-  stripeTaxTransactionMock,
-  taxCalculationShippingAddressMock,
+  mocks,
 } from "../__mocks__/mocks";
+
+jest.mock("stripe", () => {
+  return {
+    default: jest.fn().mockImplementation(() => {
+      return {
+        tax: {
+          calculations: { create: jest.fn().mockResolvedValue(mocks.stripeApi.taxCalculation) },
+          transactions: {
+            createFromCalculation: jest.fn().mockResolvedValue(mocks.stripeApi.taxTransaction),
+            createReversal: jest.fn().mockResolvedValue(mocks.stripeApi.taxReversalTransaction),
+          },
+        },
+      };
+    }),
+  };
+});
 
 describe("StripeTaxService", () => {
   let defaultContainer: MedusaContainer;
@@ -29,10 +37,9 @@ describe("StripeTaxService", () => {
   let customerService: CustomerService;
 
   beforeAll(async () => {
-    const medusa = await medusaInitialize();
-    defaultContainer = medusa.container;
+    const { container } = await medusaInitialize();
+    defaultContainer = container;
     stripeTaxService = await defaultContainer.resolve("stripeTaxService");
-    stripeTaxService.stripeService = stripeMockService();
 
     cartService = defaultContainer.resolve("cartService");
     regionService = defaultContainer.resolve("regionService");
@@ -42,14 +49,18 @@ describe("StripeTaxService", () => {
     customerRepository = defaultContainer.resolve("customerRepository");
   });
 
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
   it("should return tax lines for lineItems", async () => {
-    const itemLines = [itemTaxCalculationMock];
+    const itemLines = [mocks.itemTaxCalculation];
 
     const calculationContext = {
-      region: regionMock,
+      region: mocks.region,
       customer: {},
       allocation_map: {},
-      shipping_address: taxCalculationShippingAddressMock,
+      shipping_address: mocks.taxCalculationShippingAddress,
       shipping_methods: [],
     };
 
@@ -73,10 +84,10 @@ describe("StripeTaxService", () => {
   });
 
   it("should return empty tax lines for invalid data", async () => {
-    const itemTaxes = [itemTaxCalculationMock];
+    const itemTaxes = [mocks.itemTaxCalculation];
 
     const calculationContext = {
-      region: regionMock,
+      region: mocks.region,
       customer: {},
       allocation_map: {},
       shipping_address: {},
@@ -98,19 +109,19 @@ describe("StripeTaxService", () => {
 
     const itemTaxes = [
       {
-        ...itemTaxCalculationMock,
+        ...mocks.itemTaxCalculation,
         item: {
-          ...itemTaxCalculationMock.item,
+          ...mocks.itemTaxCalculation.item,
           cart_id: cart.id,
         },
       },
     ];
 
     const calculationContext = {
-      region: regionMock,
+      region: mocks.region,
       customer: {},
       allocation_map: {},
-      shipping_address: taxCalculationShippingAddressMock,
+      shipping_address: mocks.taxCalculationShippingAddress,
       shipping_methods: [],
     };
 
@@ -137,7 +148,7 @@ describe("StripeTaxService", () => {
     });
 
     const transaction = await stripeTaxService.createTaxTransaction({
-      ...stripePaymentIntentMock,
+      ...mocks.stripeApi.paymentIntent,
       metadata: { resource_id: cart.id },
     });
 
@@ -152,7 +163,7 @@ describe("StripeTaxService", () => {
     });
 
     const transaction = await stripeTaxService.createTaxTransaction({
-      ...stripePaymentIntentMock,
+      ...mocks.stripeApi.paymentIntent,
       metadata: { resource_id: cart.id },
     });
 
@@ -160,23 +171,23 @@ describe("StripeTaxService", () => {
 
     expect(updatedCart).toHaveProperty("metadata");
     expect(updatedCart.metadata.taxTransactionId).toEqual(
-      stripeTaxTransactionMock.id
+      mocks.stripeApi.taxTransaction.id
     );
     expect(updatedCart.metadata.paymentIntent).toEqual(
-      stripePaymentIntentMock.id
+      mocks.stripeApi.paymentIntent.id
     );
     expect(updatedCart.metadata.taxReference).toEqual(
-      stripeTaxTransactionMock.reference
+      mocks.stripeApi.taxTransaction.reference
     );
   });
 
   it("should create tax transaction on refund", async () => {
     const region = await regionService.retrieveByName("NA");
 
-    const customer = await customerRepository.save(customerMock);
+    const customer = await customerRepository.save(mocks.customer);
 
     const order = await orderRepository.save({
-      ...orderMock,
+      ...mocks.order,
       customer_id: customer.id,
       email: customer.email,
       region_id: region.id,
@@ -189,7 +200,7 @@ describe("StripeTaxService", () => {
     expect(updatedOrder).toHaveProperty("metadata");
     expect(updatedOrder.metadata).toHaveProperty("reversalTransaction");
     expect(updatedOrder.metadata.reversalTransaction).toEqual(
-      stripeTaxReversalMock.id
+      mocks.stripeApi.taxReversalTransaction.id
     );
   });
 });

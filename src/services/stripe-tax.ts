@@ -136,7 +136,7 @@ class StripeTaxService extends AbstractTaxService {
    * @param paymentIntent Intent returned from Stripe so we can get the cart's id
    * @returns created tax transaction
    */
-  public createTaxTransaction = async (paymentIntent: Stripe.PaymentIntent) => {
+  public async createTaxTransaction(paymentIntent: Stripe.PaymentIntent) {
     const cartId: string = paymentIntent.metadata.resource_id;
 
     if (!cartId) throw new Error("metadata.resource_id is required");
