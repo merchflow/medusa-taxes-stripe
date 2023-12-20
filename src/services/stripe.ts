@@ -28,10 +28,10 @@ class StripeService extends TransactionBaseService {
     });
   }
 
-  public createFromCalculation = async (
+  public async createFromCalculation(
     taxCalculationId: string,
     reference: string
-  ) => {
+  ) {
     const transaction =
       await this.stripe.tax.transactions.createFromCalculation({
         calculation: taxCalculationId,
@@ -42,12 +42,12 @@ class StripeService extends TransactionBaseService {
     return transaction;
   };
 
-  public fetchTaxCalculation = async (
+  public async fetchTaxCalculation (
     address: StripeAddressType,
     currency: string,
     lineItems: LineItemStripeType[],
     shippingCost: number
-  ): Promise<Stripe.Response<Stripe.Tax.Calculation>> => {
+  ): Promise<Stripe.Response<Stripe.Tax.Calculation>> {
     const calculation = await this.stripe.tax.calculations.create({
       currency,
       line_items: lineItems,
@@ -65,7 +65,7 @@ class StripeService extends TransactionBaseService {
     return calculation;
   };
 
-  public createReversal = async (taxTransactionId: string, refundId: string) => {
+  public async createReversal(taxTransactionId: string, refundId: string) {
     return this.stripe.tax.transactions.createReversal({
       mode: 'full',
       original_transaction: taxTransactionId,

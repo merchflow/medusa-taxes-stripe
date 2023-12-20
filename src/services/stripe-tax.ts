@@ -104,9 +104,9 @@ class StripeTaxService extends AbstractTaxService {
     taxLines = taxLines.concat(
       shippingLines.flatMap((l) => {
         return l.rates.map((r) => ({
-          rate: r.rate || 0,
+          rate: +taxCalculation.shipping_cost?.tax_breakdown[0]?.tax_rate_details?.percentage_decimal || 0,
           name: r.name,
-          code: r.code,
+          code: taxCalculation.shipping_cost?.tax_code,
           shipping_method_id: l.shipping_method.id,
         }));
       })
@@ -136,7 +136,7 @@ class StripeTaxService extends AbstractTaxService {
    * @param paymentIntent Intent returned from Stripe so we can get the cart's id
    * @returns created tax transaction
    */
-  public createTaxTransaction = async (paymentIntent: Stripe.PaymentIntent) => {
+  public async createTaxTransaction(paymentIntent: Stripe.PaymentIntent) {
     const cartId: string = paymentIntent.metadata.resource_id;
 
     if (!cartId) throw new Error("metadata.resource_id is required");

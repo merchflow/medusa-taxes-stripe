@@ -26,6 +26,16 @@ import { createMedusaContainer } from "medusa-core-utils";
 import "reflect-metadata";
 const dotenv = require("dotenv");
 
+type ExtendedConfigModule = ConfigModule & {
+  modules?: Record<string, false | any>;
+  projectConfig: {
+    stripe: {
+      secret_key: string;
+      webhook_secret: string;
+    };
+  };
+};
+
 export const medusaInitialize = async () => {
   const PORT = 9000;
   const rootDirectory = process.cwd();
@@ -42,16 +52,6 @@ export const medusaInitialize = async () => {
   } as any;
 
   const container = createMedusaContainer();
-
-  type ExtendedConfigModule = ConfigModule & {
-    modules?: Record<string, false | any>;
-    projectConfig: {
-      stripe: {
-        secret_key: string;
-        webhook_secret: string;
-      };
-    };
-  };
 
   const configModule: ExtendedConfigModule = {
     featureFlags: {
@@ -153,20 +153,23 @@ export const medusaInitialize = async () => {
 
   await searchIndexLoader({ container });
 
-  const httpServer = app.listen(PORT);
+  let httpServer;
+  axios.get(`http://localhost:${PORT}/health`).catch(() => {
+    httpServer = app.listen(PORT);
 
-  // Awaiting until server is ready
-  await new Promise(async (resolve) => {
-    let signal: NodeJS.Timeout;
-    signal = setInterval(async () => {
-      const response = await axios
-        .get(`http://localhost:${PORT}/health`)
-        .catch((e) => null);
-      if (response) {
-        clearTimeout(signal);
-        resolve(true);
-      }
-    }, 1000);
+    // Awaiting until server is ready
+    return new Promise(async (resolve) => {
+      let signal: NodeJS.Timeout;
+      signal = setInterval(async () => {
+        const response = await axios
+          .get(`http://localhost:${PORT}/health`)
+          .catch((e) => null);
+        if (response) {
+          clearTimeout(signal);
+          resolve(true);
+        }
+      }, 1000);
+    });
   });
 
   return {
