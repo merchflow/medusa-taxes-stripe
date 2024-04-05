@@ -21,7 +21,7 @@ class StripeService extends TransactionBaseService {
   private stripe: Stripe;
 
   constructor(container, options) {
-    super(container);
+    super(container, options);
     const { stripeApiKey } = options;
     this.stripe = new Stripe(stripeApiKey, {
       apiVersion: "2023-10-16",
@@ -48,6 +48,7 @@ class StripeService extends TransactionBaseService {
     lineItems: LineItemStripeType[],
     shippingCost: number
   ): Promise<Stripe.Response<Stripe.Tax.Calculation>> {
+
     const calculation = await this.stripe.tax.calculations.create({
       currency,
       line_items: lineItems,

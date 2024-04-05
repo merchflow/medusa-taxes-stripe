@@ -1,22 +1,24 @@
 import {
   CartService,
-  CustomerService,
-  MedusaContainer,
-  RegionService,
+  RegionService
 } from "@medusajs/medusa";
 import CustomerRepository from "@medusajs/medusa/dist/repositories/customer";
 import OrderRepository from "@medusajs/medusa/dist/repositories/order";
-import { medusaInitialize } from "../../lib/spawn-medusa";
+import * as path from "path";
+import setupTestServer from "../../lib/setup-server";
+import { initDb } from "../../lib/use-db";
 import {
   mocks,
 } from "../__mocks__/mocks";
+import StripeService from "../stripe";
+import StripeTaxService from "../stripe-tax";
 
 jest.mock("stripe", () => {
   return {
     default: jest.fn().mockImplementation(() => {
       return {
         tax: {
-          calculations: { create: jest.fn().mockResolvedValue(mocks.stripeApi.taxCalculation) },
+          calculations: { create: () => Promise.resolve(mocks.stripeApi.taxCalculation) },
           transactions: {
             createFromCalculation: jest.fn().mockResolvedValue(mocks.stripeApi.taxTransaction),
             createReversal: jest.fn().mockResolvedValue(mocks.stripeApi.taxReversalTransaction),
@@ -27,30 +29,44 @@ jest.mock("stripe", () => {
   };
 });
 
+/**
+ * README: Tests are currently broken since Medusa team committed something in the 1.18 version that caused an error with dependencies.
+ * We're waiting for them to launch an official way for integration tests to run.
+ * 
+ * If you want to take a shot fixing it, the server and dbConnection are currently working fine, but the returned medusa container doesn't 
+ * have the 'resolve' function for some reason, meaning that we're not able to use its services.
+ */
 describe("StripeTaxService", () => {
-  let defaultContainer: MedusaContainer;
   let stripeTaxService;
   let cartService: CartService;
   let regionService: RegionService;
   let orderRepository: typeof OrderRepository;
   let customerRepository: typeof CustomerRepository;
-  let customerService: CustomerService;
+  let dbConnection;
+  let medusaProcess;
 
   beforeAll(async () => {
-    const { container } = await medusaInitialize();
-    defaultContainer = container;
-    stripeTaxService = await defaultContainer.resolve("stripeTaxService");
+    const cwd = path.resolve(path.join(__dirname, "..", ".."));
+    dbConnection = await initDb({ cwd });
+    const { medusaProcess: medusaProcess_, container } = await setupTestServer({
+      cwd,
+      verbose: true,
+    });
+    medusaProcess = medusaProcess_;
+    stripeTaxService = new StripeTaxService({
+      ...container,
+      stripeService: new StripeService(container, {})
+    });
 
-    cartService = defaultContainer.resolve("cartService");
-    regionService = defaultContainer.resolve("regionService");
-    customerService = defaultContainer.resolve("customerService");
-
-    orderRepository = defaultContainer.resolve("orderRepository");
-    customerRepository = defaultContainer.resolve("customerRepository");
+    cartService = container['cartService'];
   });
 
   beforeEach(() => {
     jest.clearAllMocks();
+  });
+
+  afterAll(async () => {
+    medusaProcess.kill();
   });
 
   it("should return tax lines for lineItems", async () => {

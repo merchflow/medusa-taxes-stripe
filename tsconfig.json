@@ -14,12 +14,18 @@
     "sourceMap": false,
     "outDir": "./dist",
     "rootDir": "src",
-    "baseUrl": "src"
+    "baseUrl": "src",
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "checkJs": false
   },
-  "include": ["src"],
+  "include": ["src/"],
   "exclude": [
     "**/__tests__",
     "**/__fixtures__",
-    "node_modules"
+    "**/__mocks__",
+    "node_modules",
+    "build",
+    ".cache"
   ]
 }

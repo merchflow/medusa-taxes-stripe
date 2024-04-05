@@ -1,0 +1,24 @@
+version: '3.7'
+services:
+  postgres:
+    image: postgres:14.1
+    command: postgres -c fsync=off -c synchronous_commit=off -c full_page_writes=off -c random_page_cost=1.0
+    networks:
+      - backend
+    ports:
+      - "54322:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: medusa-docker
+
+  redis:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '63792:6379'
+    command: redis-server --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+
+networks:
+  backend:
+    driver: bridge
