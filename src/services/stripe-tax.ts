@@ -41,6 +41,8 @@ class StripeTaxService extends AbstractTaxService {
     this.cacheService = container.cacheService;
     this.stripeService = container.stripeService;
     this.orderService = container.orderService;
+
+    this.createTaxTransaction = this.createTaxTransaction.bind(this);
   }
 
   /**
