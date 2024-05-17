@@ -79,6 +79,7 @@ const projectConfig = {
         ? { rejectUnauthorized: false }
         : false,
   },
+  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET
 };
 
 if (DATABASE_URL && DATABASE_TYPE === "postgres") {

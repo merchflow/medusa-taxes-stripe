@@ -27,11 +27,12 @@ const verifySignature =
     }
   };
 
-export default function getStoreRouter(router: Router): Router {
+export default function getStoreRouter(router: Router, options: Record<string, any>): Router {
+  const { webhookSecret, projectConfig } = options;
   router.post(
     "/stripe/webhook",
     raw({ type: "application/json" }),
-    verifySignature(process.env.STRIPE_WEBHOOK_SECRET),
+    verifySignature(webhookSecret || projectConfig.webhookSecret),
     wrapHandler(
       async (
         req: RawRequest,
