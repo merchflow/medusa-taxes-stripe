@@ -143,26 +143,26 @@ class StripeTaxService extends AbstractTaxService {
   public async createTaxTransaction(paymentIntent: Stripe.PaymentIntent) {
     const cartId: string = paymentIntent.metadata.resource_id;
 
-    if (!cartId) throw new Error("metadata.resource_id is required");
+    if (cartId) {
+      const cart = await this.cartService.retrieve(cartId);
 
-    const cart = await this.cartService.retrieve(cartId);
+      const taxCalculationId: string = cart.metadata.taxCalculationId as string;
 
-    const taxCalculationId: string = cart.metadata.taxCalculationId as string;
+      const transaction = await this.stripeService.createFromCalculation(
+        taxCalculationId,
+        paymentIntent.id
+      );
 
-    const transaction = await this.stripeService.createFromCalculation(
-      taxCalculationId,
-      paymentIntent.id
-    );
+      await this.cartService.update(cartId, {
+        metadata: {
+          taxTransactionId: transaction.id,
+          paymentIntent: paymentIntent.id,
+          taxReference: transaction.reference,
+        },
+      });
 
-    await this.cartService.update(cartId, {
-      metadata: {
-        taxTransactionId: transaction.id,
-        paymentIntent: paymentIntent.id,
-        taxReference: transaction.reference,
-      },
-    });
-
-    return transaction;
+      return transaction;
+    }
   }
 
   /**
