@@ -85,8 +85,12 @@ class StripeTaxService extends AbstractTaxService {
 
     const cartId = itemLines[0].item.cart_id;
     if (cartId) {
-      await this.cartService.update(cartId, {
-        metadata: { taxCalculationId: taxCalculation.id },
+      this.cartService.retrieve(cartId).then((cart) => {
+        if (cart?.metadata?.taxCalculationId !== taxCalculation.id) {
+          return this.cartService.update(cartId, {
+            metadata: { taxCalculationId: taxCalculation.id },
+          });
+        }
       });
     }
 

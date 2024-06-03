@@ -1,6 +1,6 @@
 {
   "name": "medusa-taxes-stripe",
-  "version": "0.0.11",
+  "version": "0.0.14",
   "description": "Medusa plugin to add a custom Tax Provider to fetch tax calculations from Stripe.",
   "author": "Merchflow - Felipe Lopes <felipe.lopes@merchflow.com>",
   "license": "MIT",
@@ -44,7 +44,7 @@
     "@medusajs/cache-redis": "^1.9.0",
     "@medusajs/event-bus-local": "^1.9.7",
     "@medusajs/event-bus-redis": "^1.8.10",
-    "@medusajs/medusa": "1.20.5",
+    "@medusajs/medusa": "^1.20.6",
     "@medusajs/modules-sdk": "^1.12.4",
     "awilix": "^8.0.1",
     "body-parser": "^1.19.0",
@@ -77,6 +77,6 @@
     "typescript": "^4.5.2"
   },
   "peerDependencies": {
-    "@medusajs/medusa": "1.20.5"
+    "@medusajs/medusa": "^1.20.6"
   }
 }
