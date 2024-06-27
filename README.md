@@ -32,6 +32,22 @@
   </a>
 </p>
 
+## Installing this plugin
+`yarn add medusa-taxes-stripe`
+
+## Configuration
+
+Add the following to the `plugins` array in `medusa-config.js`:
+
+```js
+{
+  resolve: `medusa-taxes-stripe`,
+  options: {
+    stripeApiKey: process.env.STRIPE_API_KEY,
+  },
+},
+```
+
 ## Compatibility
 
 This starter is compatible with versions >= 1.8.0 of `@medusajs/medusa`. 
